@@ -1,9 +1,7 @@
-package app.models;
+package models;
 
 import java.util.Date;
 import java.util.UUID;
-
-import app.enums.TransactionType;
 
 public class Transaction {
     private UUID id;

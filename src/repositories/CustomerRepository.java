@@ -1,12 +1,11 @@
-package app.repositories;
+package repositories;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import app.interfaces.RepositoryBase;
-import app.models.Account;
-import app.models.Customer;
+import models.Account;
+import models.Customer;
 
 public class CustomerRepository implements RepositoryBase<Customer> {
 

@@ -1,4 +1,4 @@
-package app.enums;
+package models;
 
 public enum TransactionType {
     DEPOSIT,

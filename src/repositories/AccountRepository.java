@@ -1,10 +1,9 @@
-package app.repositories;
+package repositories;
 
 import java.util.ArrayList;
 import java.util.Optional;
 
-import app.interfaces.RepositoryBase;
-import app.models.Account;
+import models.Account;
 
 public class AccountRepository implements RepositoryBase<Account> {
     private static AccountRepository instance;

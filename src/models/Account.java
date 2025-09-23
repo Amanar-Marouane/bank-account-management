@@ -1,10 +1,8 @@
-package app.models;
+package models;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-
-import app.enums.AccountType;
 
 public class Account {
     private UUID id;

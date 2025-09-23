@@ -1,12 +1,11 @@
-package app.repositories;
+package repositories;
 
 import java.util.ArrayList;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import app.interfaces.RepositoryBase;
-import app.models.Account;
-import app.models.Transaction;
+import models.Account;
+import models.Transaction;
 
 public class TransactionRepository implements RepositoryBase<Transaction> {
     private static TransactionRepository instance;
