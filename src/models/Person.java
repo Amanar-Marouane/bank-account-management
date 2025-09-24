@@ -8,13 +8,15 @@ public abstract class Person {
     private String lastName;
     private String email;
     private String password;
+    private UserType userType;
 
-    public Person(String firstName, String lastName, String email, String password) {
+    public Person(String firstName, String lastName, String email, String password, UserType userType) {
         this.id = UUID.randomUUID();
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
         this.password = password;
+        this.userType = userType;
     }
 
     // Getters & setters
@@ -56,5 +58,13 @@ public abstract class Person {
 
     public String getFullName() {
         return firstName + " " + lastName;
+    }
+
+    public UserType getUserType() {
+        return userType;
+    }
+
+    public void setUserType(UserType userType) {
+        this.userType = userType;
     }
 }

@@ -4,12 +4,17 @@ import java.util.HashMap;
 
 import models.Customer;
 import repositories.CustomerRepository;
-import services.AuthService;
+import services.AuthInterface;
 import utils.Console;
 
 final public class CustomerController {
-    private AuthService auth = AuthService.getInstance();
-    private CustomerRepository customerRepository = CustomerRepository.getInstance();
+    private AuthInterface auth;
+    private CustomerRepository customerRepository;
+
+    public CustomerController(AuthInterface auth) {
+        this.auth = auth;
+        this.customerRepository = CustomerRepository.getInstance();
+    }
 
     private HashMap<String, String> registerAttempt() {
         HashMap<String, String> registry = new HashMap<>();
@@ -119,13 +124,12 @@ final public class CustomerController {
                 }
 
                 // Check if email already exists
-                if (customerRepository.find("email", email) != null) {
+                if (!customerRepository.find("email", email).isEmpty()) {
                     Console.error("This email is already registered. Please use a different one.");
                     return;
                 }
 
                 u.setEmail(email);
-                customerRepository.save(u);
                 Console.success("Your email has been updated successfully.");
                 break;
             case "firstname":

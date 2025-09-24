@@ -3,6 +3,7 @@ package services;
 import java.util.Optional;
 
 import models.Customer;
+import models.UserType;
 import repositories.CustomerRepository;
 import utils.Console;
 
@@ -48,7 +49,8 @@ public final class AuthService implements AuthInterface {
                     sanitizeName(firstName),
                     sanitizeName(lastName),
                     email.toLowerCase().trim(),
-                    password);
+                    password,
+                    UserType.USER);
 
             customerRepository.save(customer);
             Console.success("Registration completed successfully! Welcome, " + firstName + "!");
