@@ -2,6 +2,8 @@ package services;
 
 import java.util.Optional;
 
+import exceptions.CustomerNotFoundException;
+import exceptions.InvalidTransactionException;
 import models.Customer;
 import models.UserType;
 import repositories.CustomerRepository;
@@ -34,14 +36,26 @@ public final class AuthService implements AuthInterface {
         try {
             // Validate current session state
             if (this.authenticated) {
-                Console.warning("Registration denied: Active session detected. Please logout first.");
-                return false;
+                throw new IllegalArgumentException("Active session detected. Please logout first.");
+            }
+
+            // Validate input parameters
+            if (firstName == null || firstName.trim().isEmpty()) {
+                throw new IllegalArgumentException("First name cannot be null or empty");
+            }
+            if (lastName == null || lastName.trim().isEmpty()) {
+                throw new IllegalArgumentException("Last name cannot be null or empty");
+            }
+            if (email == null || email.trim().isEmpty()) {
+                throw new IllegalArgumentException("Email cannot be null or empty");
+            }
+            if (password == null || password.trim().isEmpty()) {
+                throw new IllegalArgumentException("Password cannot be null or empty");
             }
 
             // Check for existing user
             if (customerRepository.find("email", email.toLowerCase().trim()).isPresent()) {
-                Console.error("Registration failed: Email address already registered.");
-                return false;
+                throw new IllegalArgumentException("Email address already registered");
             }
 
             // Create new customer
@@ -60,37 +74,51 @@ public final class AuthService implements AuthInterface {
             Console.error("Registration failed: " + e.getMessage());
             return false;
         } catch (Exception e) {
-            Console.error("Registration failed due to system error. Please try again.");
+            Console.error("Registration failed due to system error: " + e.getMessage());
             return false;
         }
     }
 
     @Override
     public boolean login(String email, String password) {
-        // Validate current session state
-        if (this.authenticated) {
-            Console.warning("Login denied: Already authenticated. Please logout first.");
-            return false;
-        }
+        try {
+            // Validate current session state
+            if (this.authenticated) {
+                throw new InvalidTransactionException("login", "Already authenticated. Please logout first.");
+            }
 
-        // Find user
-        Optional<Customer> customerOpt = customerRepository.find("email", email.toLowerCase().trim());
-        if (customerOpt.isEmpty()) {
+            // Validate input
+            if (email == null || email.trim().isEmpty()) {
+                throw new InvalidTransactionException("login", "Email cannot be null or empty");
+            }
+            if (password == null || password.trim().isEmpty()) {
+                throw new InvalidTransactionException("login", "Password cannot be null or empty");
+            }
+
+            // Find user
+            Optional<Customer> customerOpt = customerRepository.find("email", email.toLowerCase().trim());
+            if (customerOpt.isEmpty()) {
+                throw new CustomerNotFoundException("email", email);
+            }
+
+            Customer customer = customerOpt.get();
+
+            // Verify password
+            if (!customer.getPassword().equals(password)) {
+                throw new InvalidTransactionException("login", "Invalid credentials");
+            }
+
+            // Establish session
+            establishSession(customer);
+            return true;
+
+        } catch (CustomerNotFoundException | InvalidTransactionException e) {
             Console.error("Login failed: Invalid credentials.");
             return false;
-        }
-
-        Customer customer = customerOpt.get();
-
-        // Verify password
-        if (!customer.getPassword().equals(password)) {
-            Console.error("Login failed: Invalid credentials.");
+        } catch (Exception e) {
+            Console.error("Login failed due to system error. Please try again.");
             return false;
         }
-
-        // Establish session
-        establishSession(customer);
-        return true;
     }
 
     @Override

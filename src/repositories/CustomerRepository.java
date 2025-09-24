@@ -6,6 +6,8 @@ import java.util.Optional;
 
 import models.Account;
 import models.Customer;
+import exceptions.CustomerNotFoundException;
+import exceptions.InvalidTransactionException;
 
 public class CustomerRepository implements RepositoryBase<Customer> {
 
@@ -60,6 +62,19 @@ public class CustomerRepository implements RepositoryBase<Customer> {
 
     @Override
     public void save(Customer customer) {
+        if (customer == null) {
+            throw new CustomerNotFoundException("Cannot save null customer");
+        }
+        if (customer.getEmail() == null || customer.getEmail().trim().isEmpty()) {
+            throw new InvalidTransactionException("customer creation", "Email cannot be null or empty");
+        }
+        if (customer.getFirstName() == null || customer.getFirstName().trim().isEmpty()) {
+            throw new InvalidTransactionException("customer creation", "First name cannot be null or empty");
+        }
+        if (customer.getLastName() == null || customer.getLastName().trim().isEmpty()) {
+            throw new InvalidTransactionException("customer creation", "Last name cannot be null or empty");
+        }
+
         customers.add(customer);
     }
 
@@ -86,6 +101,16 @@ public class CustomerRepository implements RepositoryBase<Customer> {
 
     @Override
     public void delete(Customer c) {
+        if (c == null) {
+            throw new CustomerNotFoundException("Cannot delete null customer");
+        }
+        if (!customers.contains(c)) {
+            throw new CustomerNotFoundException("Customer not found in repository");
+        }
+        if (!c.getAccounts().isEmpty()) {
+            throw new InvalidTransactionException("customer deletion", "Cannot delete customer with existing accounts");
+        }
+
         customers.remove(c);
     }
 

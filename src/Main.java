@@ -1,17 +1,12 @@
 import seeders.Seeder;
-import utils.Console;
 import view.ConsoleUi;
 
-class Main {
-
+public class Main {
     public static void main(String[] args) {
-        // Initialize application & seed data
-        Console.info("Welcome to the Banking System!");
-        Console.info("Initializing application...");
+        // Seed the database with initial data
         Seeder.run();
-        Console.info("Application started successfully.");
 
-        // Create and run the console UI
+        // Start the console UI
         ConsoleUi ui = new ConsoleUi();
         ui.run();
     }

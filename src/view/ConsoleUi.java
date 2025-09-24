@@ -1,6 +1,7 @@
 package view;
 
 import controllers.AdminController;
+import controllers.AuthController;
 import controllers.CustomerController;
 import models.Customer;
 import models.UserType;
@@ -12,11 +13,13 @@ public class ConsoleUi {
     private final AuthInterface auth;
     private final CustomerController customerController;
     private final AdminController adminController;
+    private final AuthController authController;
 
     public ConsoleUi() {
         this.auth = AuthService.getInstance();
         this.customerController = new CustomerController(auth);
         this.adminController = new AdminController(auth);
+        this.authController = new AuthController(auth);
     }
 
     public void run() {
@@ -48,10 +51,10 @@ public class ConsoleUi {
             case "0":
                 exit(0);
             case "1":
-                customerController.register();
+                authController.register();
                 break;
             case "2":
-                customerController.login();
+                authController.login();
                 break;
             default:
                 Console.error("Invalid option!");
@@ -68,9 +71,10 @@ public class ConsoleUi {
 
         Console.info("Admin Panel - Choose an option:");
         Console.info("  1) Manage Customers");
-        Console.info("  2) View Profile");
-        Console.info("  3) Update Profile");
-        Console.info("  4) Logout");
+        Console.info("  2) View All System Transactions");
+        Console.info("  3) View Profile");
+        Console.info("  4) Update Profile");
+        Console.info("  5) Logout");
         Console.info("  0) Exit");
         Console.line();
 
@@ -82,13 +86,16 @@ public class ConsoleUi {
                 adminController.manageCustomers();
                 break;
             case "2":
-                customerController.profile(u);
+                adminController.viewAllSystemTransactions();
                 break;
             case "3":
-                showUpdateProfileMenu();
+                customerController.profile(u, "Your Profile");
                 break;
             case "4":
-                customerController.logout();
+                showUpdateProfileMenu();
+                break;
+            case "5":
+                authController.logout();
                 break;
             default:
                 Console.error("Invalid option!");
@@ -104,9 +111,10 @@ public class ConsoleUi {
         Console.line();
 
         Console.info("Choose an option:");
-        Console.info("  1) Logout");
+        Console.info("  1) My Accounts");
         Console.info("  2) View Profile");
         Console.info("  3) Update Profile");
+        Console.info("  4) Logout");
         Console.info("  0) Exit");
         Console.line();
 
@@ -115,13 +123,16 @@ public class ConsoleUi {
             case "0":
                 exit(0);
             case "1":
-                customerController.logout();
+                customerController.manageMyAccounts();
                 break;
             case "2":
-                customerController.profile(u);
+                customerController.profile(u, "Your Profile");
                 break;
             case "3":
                 showUpdateProfileMenu();
+                break;
+            case "4":
+                authController.logout();
                 break;
             default:
                 Console.error("Invalid option!");
@@ -145,16 +156,16 @@ public class ConsoleUi {
                 case "0":
                     return;
                 case "1":
-                    customerController.update("firstName");
+                    authController.update("firstName");
                     break;
                 case "2":
-                    customerController.update("lastName");
+                    authController.update("lastName");
                     break;
                 case "3":
-                    customerController.update("email");
+                    authController.update("email");
                     break;
                 case "4":
-                    customerController.update("password");
+                    authController.update("password");
                     break;
                 default:
                     Console.error("Invalid option!");

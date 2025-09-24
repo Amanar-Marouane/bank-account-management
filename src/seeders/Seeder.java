@@ -24,11 +24,11 @@ public class Seeder {
                 customerRepo.save(adminCustomer);
 
                 // Create first regular customer
-                Customer customer1 = new Customer("Omar", "Ouyacho", "omar@email.com", "llLL00!!", UserType.USER);
+                Customer customer1 = new Customer("Omar", "Ouyacho", "omar@gmail.com", "llLL00!!", UserType.USER);
                 customerRepo.save(customer1);
 
                 // Create second regular customer
-                Customer customer2 = new Customer("Sarah", "Johnson", "sarah@email.com", "ssSS00!!", UserType.USER);
+                Customer customer2 = new Customer("Sarah", "Johnson", "sarah@gmail.com", "ssSS00!!", UserType.USER);
                 customerRepo.save(customer2);
 
                 // Create accounts for customer1

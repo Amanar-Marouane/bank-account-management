@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.Optional;
 
 import models.Account;
+import exceptions.AccountNotFoundException;
+import exceptions.CustomerNotFoundException;
+import exceptions.InvalidTransactionException;
 
 public class AccountRepository implements RepositoryBase<Account> {
     private static AccountRepository instance;
@@ -32,7 +35,7 @@ public class AccountRepository implements RepositoryBase<Account> {
                 return accounts.stream()
                         .filter(a -> a.getId().toString().equals(value))
                         .findFirst();
-            case "accountType":
+            case "accounttype":
                 return accounts.stream()
                         .filter(a -> a.getAccountType().toString().equalsIgnoreCase(value))
                         .findFirst();
@@ -53,6 +56,13 @@ public class AccountRepository implements RepositoryBase<Account> {
 
     @Override
     public void save(Account account) {
+        if (account == null) {
+            throw new AccountNotFoundException("Cannot save null account");
+        }
+        if (account.getCustomer() == null) {
+            throw new CustomerNotFoundException("Account must have a customer");
+        }
+
         account.getCustomer().addAccount(account);
         accounts.add(account);
     }
@@ -76,6 +86,16 @@ public class AccountRepository implements RepositoryBase<Account> {
 
     @Override
     public void delete(Account a) {
+        if (a == null) {
+            throw new AccountNotFoundException("Cannot delete null account");
+        }
+        if (!accounts.contains(a)) {
+            throw new AccountNotFoundException("Account not found in repository");
+        }
+        if (!a.getTransactions().isEmpty()) {
+            throw new InvalidTransactionException("deletion", "Cannot delete account with existing transactions");
+        }
+
         accounts.remove(a);
     }
 

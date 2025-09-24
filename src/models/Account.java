@@ -3,6 +3,9 @@ package models;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import exceptions.InvalidTransactionException;
+import exceptions.InsufficientFundsException;
+import exceptions.NegativeAmountException;
 
 public class Account {
     private UUID id;
@@ -40,21 +43,40 @@ public class Account {
     }
 
     public void addTransaction(Transaction transaction) {
+        if (transaction == null) {
+            throw new InvalidTransactionException("transaction", "Transaction cannot be null");
+        }
+        if (transaction.getAmount() <= 0) {
+            throw new NegativeAmountException(transaction.getAmount());
+        }
+
         transactions.add(transaction);
+
         // Update balance based on transaction type
         switch (transaction.getTransactionType()) {
             case DEPOSIT:
                 balance += transaction.getAmount();
                 break;
             case WITHDRAWAL:
+                if (balance < transaction.getAmount()) {
+                    throw new InsufficientFundsException(transaction.getAmount(), balance);
+                }
                 balance -= transaction.getAmount();
                 break;
             case TRANSFER:
-                if (transaction.getSourceAccount() == this)
+                if (transaction.getSourceAccount() == this) {
+                    if (balance < transaction.getAmount()) {
+                        throw new InsufficientFundsException(transaction.getAmount(), balance);
+                    }
                     balance -= transaction.getAmount();
-                if (transaction.getDestinationAccount() == this)
+                }
+                if (transaction.getDestinationAccount() == this) {
                     balance += transaction.getAmount();
+                }
                 break;
+            default:
+                throw new InvalidTransactionException("transaction",
+                        "Unknown transaction type: " + transaction.getTransactionType());
         }
     }
 }

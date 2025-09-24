@@ -9,7 +9,7 @@ import utils.Console;
 
 import java.util.Optional;
 
-public class AccountController {
+public final class AccountController {
     private AuthInterface auth;
     private AccountRepository accountRepository;
 

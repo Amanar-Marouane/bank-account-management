@@ -3,24 +3,40 @@ package controllers;
 import models.Account;
 import models.AccountType;
 import models.Customer;
+import models.Transaction;
+import models.TransactionType;
 import models.UserType;
 import repositories.AccountRepository;
 import repositories.CustomerRepository;
+import repositories.TransactionRepository;
 import services.AuthInterface;
+import services.FilterService;
+import services.StatisticsService;
 import utils.Console;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public class AdminController {
-    private AuthInterface auth;
-    private CustomerRepository customerRepository;
-    private AccountRepository accountRepository;
+public final class AdminController {
+    private final AuthInterface auth;
+    private final CustomerRepository customerRepository;
+    private final AccountRepository accountRepository;
+    private final TransactionController transactionController;
+    private final TransactionRepository transactionRepository;
+    private final CustomerController customerController;
+    private final FilterService filterService;
+    private final StatisticsService statisticsService;
 
     public AdminController(AuthInterface auth) {
         this.auth = auth;
         this.customerRepository = CustomerRepository.getInstance();
         this.accountRepository = AccountRepository.getInstance();
+        this.transactionController = new TransactionController();
+        this.transactionRepository = TransactionRepository.getInstance();
+        this.customerController = new CustomerController(auth);
+        this.filterService = FilterService.getInstance();
+        this.statisticsService = StatisticsService.getInstance();
     }
 
     public void manageCustomers() {
@@ -44,7 +60,7 @@ public class AdminController {
                     searchCustomer();
                     break;
                 case "3":
-                    createCustomer();
+                    customerController.createCustomer();
                     break;
                 default:
                     Console.error("Invalid option!");
@@ -94,30 +110,6 @@ public class AdminController {
         }
     }
 
-    private void createCustomer() {
-        String firstName = Console.ask("Enter first name: ");
-        String lastName = Console.ask("Enter last name: ");
-        String email = Console.ask("Enter email: ");
-        String password = Console.ask("Enter password: ");
-
-        Console.info("Select user type:");
-        Console.info("1) USER");
-        Console.info("2) ADMIN");
-        String typeChoice = Console.ask("Enter choice (1-2): ");
-
-        UserType userType = typeChoice.equals("2") ? UserType.ADMIN : UserType.USER;
-
-        // Check if email already exists
-        if (customerRepository.find("email", email).isPresent()) {
-            Console.error("Email already exists!");
-            return;
-        }
-
-        Customer newCustomer = new Customer(firstName, lastName, email, password, userType);
-        customerRepository.save(newCustomer);
-        Console.success("Customer created successfully!");
-    }
-
     private void manageSpecificCustomer(Customer customer) {
         while (true) {
             Console.line();
@@ -125,10 +117,11 @@ public class AdminController {
             Console.info("1) View customer details");
             Console.info("2) Update customer");
             Console.info("3) Delete customer");
+            Console.info("4) View customer transactions");
 
             // Only show account management for regular users, not admins
             if (customer.getUserType() == UserType.USER) {
-                Console.info("4) Manage customer accounts");
+                Console.info("5) Manage customer accounts");
             }
 
             Console.info("0) Back");
@@ -139,7 +132,7 @@ public class AdminController {
                 case "0":
                     return;
                 case "1":
-                    viewCustomerDetails(customer);
+                    customerController.profile(customer, "Customer Details");
                     break;
                 case "2":
                     updateCustomer(customer);
@@ -150,6 +143,9 @@ public class AdminController {
                     }
                     break;
                 case "4":
+                    viewCustomerTransactionsAdmin(customer);
+                    break;
+                case "5":
                     if (customer.getUserType() == UserType.USER) {
                         manageCustomerAccounts(customer);
                     } else {
@@ -161,17 +157,6 @@ public class AdminController {
                     break;
             }
         }
-    }
-
-    private void viewCustomerDetails(Customer customer) {
-        Console.line();
-        Console.info("Customer Details:");
-        Console.info("ID: " + customer.getId());
-        Console.info("Name: " + customer.getFullName());
-        Console.info("Email: " + customer.getEmail());
-        Console.info("User Type: " + customer.getUserType());
-        Console.info("Number of Accounts: " + customer.getAccounts().size());
-        Console.line();
     }
 
     private void updateCustomer(Customer customer) {
@@ -250,6 +235,7 @@ public class AdminController {
             Console.info("1) List customer accounts");
             Console.info("2) Create new account");
             Console.info("3) Delete account");
+            Console.info("4) Manage account transactions (Admin)");
             Console.info("0) Back");
             Console.line();
 
@@ -265,6 +251,9 @@ public class AdminController {
                     break;
                 case "3":
                     deleteCustomerAccount(customer);
+                    break;
+                case "4":
+                    manageAdminAccountTransactions(customer);
                     break;
                 default:
                     Console.error("Invalid option!");
@@ -376,4 +365,329 @@ public class AdminController {
             }
         }
     }
+
+    private void manageAdminAccountTransactions(Customer customer) {
+        List<Account> accounts = customer.getAccounts();
+        if (accounts.isEmpty()) {
+            Console.warning("No accounts found for this customer.");
+            return;
+        }
+
+        Console.line();
+        Console.info("Admin - Select account to manage transactions:");
+        for (int i = 0; i < accounts.size(); i++) {
+            Account account = accounts.get(i);
+            Console.info((i + 1) + ") " + account.getAccountType() +
+                    " - Balance: $" + String.format("%.2f", account.getBalance()) +
+                    " - ID: " + account.getId());
+        }
+        Console.line();
+
+        String choice = Console.ask("Enter account number (0 to cancel): ");
+        if (!choice.equals("0")) {
+            try {
+                int index = Integer.parseInt(choice) - 1;
+                if (index >= 0 && index < accounts.size()) {
+                    Account selectedAccount = accounts.get(index);
+                    showTransactionMenu(selectedAccount);
+                } else {
+                    Console.error("Invalid account number!");
+                }
+            } catch (NumberFormatException e) {
+                Console.error("Invalid input!");
+            }
+        }
+    }
+
+    private void showTransactionMenu(Account account) {
+        while (true) {
+            Console.line();
+            Console.info("Admin Transaction Management for Account: " + account.getAccountType());
+            Console.info("Balance: $" + String.format("%.2f", account.getBalance()));
+            Console.info("1) View transaction history");
+            Console.info("2) View filtered transactions");
+            Console.info("3) View all customer transactions");
+            Console.info("4) Add deposit");
+            Console.info("5) Add withdrawal");
+            Console.info("6) Add transfer");
+            Console.info("7) Delete transaction");
+            Console.info("0) Back");
+            Console.line();
+
+            String choice = Console.ask("Enter choice: ");
+            switch (choice) {
+                case "0":
+                    return;
+                case "1":
+                    transactionController.viewTransactionHistory(account);
+                    break;
+                case "2":
+                    transactionController.viewFilteredTransactionHistory(account);
+                    break;
+                case "3":
+                    transactionController.viewAllCustomerTransactions(account.getCustomer());
+                    break;
+                case "4":
+                    transactionController.addDeposit(account);
+                    break;
+                case "5":
+                    transactionController.addWithdrawal(account);
+                    break;
+                case "6":
+                    transactionController.addTransfer(account);
+                    break;
+                case "7":
+                    transactionController.deleteTransaction(account);
+                    break;
+                default:
+                    Console.error("Invalid option!");
+                    break;
+            }
+        }
+    }
+
+    // Add a new menu option for viewing all transactions in the system (admin only)
+    public void viewAllSystemTransactions() {
+        try {
+            ArrayList<Transaction> allTransactions = transactionRepository.all();
+
+            if (allTransactions.isEmpty()) {
+                Console.warning("No transactions found in the system.");
+                return;
+            }
+
+            Console.line();
+            Console.info("All System Transactions");
+            Console.info("Total Transactions: " + allTransactions.size());
+            Console.line();
+
+            // Enhanced menu for system transactions
+            while (true) {
+                Console.info("System Transaction Options:");
+                Console.info("1) View all transactions");
+                Console.info("2) View filtered transactions");
+                Console.info("3) View transactions by customer");
+                Console.info("4) View transaction statistics");
+                Console.info("0) Back");
+                Console.line();
+
+                String choice = Console.ask("Enter choice: ");
+                switch (choice) {
+                    case "0":
+                        return;
+                    case "1":
+                        displaySystemTransactions(allTransactions);
+                        break;
+                    case "2":
+                        filterAndDisplaySystemTransactions(allTransactions);
+                        break;
+                    case "3":
+                        viewTransactionsByCustomer();
+                        break;
+                    case "4":
+                        displaySystemTransactionStatistics(allTransactions);
+                        break;
+                    default:
+                        Console.error("Invalid option!");
+                        break;
+                }
+                Console.line();
+            }
+
+        } catch (Exception e) {
+            Console.error("View failed: An unexpected error occurred. " + e.getMessage());
+        }
+    }
+
+    private void filterAndDisplaySystemTransactions(ArrayList<Transaction> allTransactions) {
+        ArrayList<Transaction> filteredTransactions = filterService.filterTransactions(allTransactions);
+        if (filteredTransactions.isEmpty()) {
+            Console.warning("No transactions match the selected filters.");
+            return;
+        }
+        displaySystemTransactions(filteredTransactions);
+    }
+
+    private void viewTransactionsByCustomer() {
+        List<Customer> customers = customerRepository.all();
+        if (customers.isEmpty()) {
+            Console.warning("No customers found.");
+            return;
+        }
+
+        Console.line();
+        Console.info("Select Customer:");
+        for (int i = 0; i < customers.size(); i++) {
+            Customer c = customers.get(i);
+            Console.info((i + 1) + ") " + c.getFullName() + " (" + c.getEmail() + ") - " + c.getUserType());
+        }
+        Console.line();
+
+        String choice = Console.ask("Enter customer number (0 to cancel): ");
+        if (!choice.equals("0")) {
+            try {
+                int index = Integer.parseInt(choice) - 1;
+                if (index >= 0 && index < customers.size()) {
+                    Customer selectedCustomer = customers.get(index);
+                    viewCustomerTransactionsAdmin(selectedCustomer);
+                } else {
+                    Console.error("Invalid customer number!");
+                }
+            } catch (NumberFormatException e) {
+                Console.error("Invalid input!");
+            }
+        }
+    }
+
+    private void viewCustomerTransactionsAdmin(Customer customer) {
+        try {
+            if (customer.getUserType() == UserType.ADMIN) {
+                Console.warning("Admin users do not have transaction accounts.");
+                return;
+            }
+
+            List<Account> accounts = customer.getAccounts();
+            if (accounts.isEmpty()) {
+                Console.warning("No accounts found for this customer.");
+                return;
+            }
+
+            // Collect all transactions from customer's accounts
+            ArrayList<Transaction> customerTransactions = new ArrayList<>();
+            for (Account account : accounts) {
+                customerTransactions.addAll(account.getTransactions());
+            }
+
+            if (customerTransactions.isEmpty()) {
+                Console.warning("No transactions found for this customer.");
+                return;
+            }
+
+            Console.line();
+            Console.info("Transaction Management for Customer: " + customer.getFullName());
+            Console.info("Total Accounts: " + accounts.size());
+            Console.info("Total Transactions: " + customerTransactions.size());
+            Console.line();
+
+            while (true) {
+                Console.info("Customer Transaction Options:");
+                Console.info("1) View all customer transactions");
+                Console.info("2) View filtered customer transactions");
+                Console.info("3) View transactions by account");
+                Console.info("4) View customer transaction statistics");
+                Console.info("0) Back");
+                Console.line();
+
+                String choice = Console.ask("Enter choice: ");
+                switch (choice) {
+                    case "0":
+                        return;
+                    case "1":
+                        filterService.displayFilteredTransactions(customerTransactions, customer);
+                        break;
+                    case "2":
+                        filterAndDisplayCustomerTransactions(customerTransactions, customer);
+                        break;
+                    case "3":
+                        viewTransactionsByAccount(customer);
+                        break;
+                    case "4":
+                        statisticsService.displayCustomerTransactionStatistics(customerTransactions, customer);
+                        break;
+                    default:
+                        Console.error("Invalid option!");
+                        break;
+                }
+                Console.line();
+            }
+
+        } catch (Exception e) {
+            Console.error("View failed: An unexpected error occurred. " + e.getMessage());
+        }
+    }
+
+    private void filterAndDisplayCustomerTransactions(ArrayList<Transaction> customerTransactions, Customer customer) {
+        ArrayList<Transaction> filteredTransactions = filterService.filterTransactions(customerTransactions);
+        if (filteredTransactions.isEmpty()) {
+            Console.warning("No transactions match the selected filters.");
+            return;
+        }
+        filterService.displayFilteredTransactions(filteredTransactions, customer);
+    }
+
+    private void viewTransactionsByAccount(Customer customer) {
+        List<Account> accounts = customer.getAccounts();
+
+        Console.line();
+        Console.info("Select Account:");
+        for (int i = 0; i < accounts.size(); i++) {
+            Account account = accounts.get(i);
+            Console.info((i + 1) + ") " + account.getAccountType() +
+                    " - Balance: $" + String.format("%.2f", account.getBalance()) +
+                    " - Transactions: " + account.getTransactions().size());
+        }
+        Console.line();
+
+        String choice = Console.ask("Enter account number (0 to cancel): ");
+        if (!choice.equals("0")) {
+            try {
+                int index = Integer.parseInt(choice) - 1;
+                if (index >= 0 && index < accounts.size()) {
+                    Account selectedAccount = accounts.get(index);
+
+                    Console.line();
+                    Console.info("Account Transaction Options:");
+                    Console.info("1) View all account transactions");
+                    Console.info("2) View filtered account transactions");
+                    Console.info("0) Back");
+
+                    String subChoice = Console.ask("Enter choice: ");
+                    switch (subChoice) {
+                        case "1":
+                            transactionController.viewTransactionHistory(selectedAccount);
+                            break;
+                        case "2":
+                            transactionController.viewFilteredTransactionHistory(selectedAccount);
+                            break;
+                    }
+                } else {
+                    Console.error("Invalid account number!");
+                }
+            } catch (NumberFormatException e) {
+                Console.error("Invalid input!");
+            }
+        }
+    }
+
+    private void displaySystemTransactionStatistics(ArrayList<Transaction> transactions) {
+        statisticsService.displaySystemStatistics(transactions);
+    }
+
+    private void displaySystemTransactions(ArrayList<Transaction> transactions) {
+        Console.line();
+        Console.success("System Transactions (" + transactions.size() + " total):");
+        Console.line();
+
+        for (int i = 0; i < transactions.size(); i++) {
+            Transaction t = transactions.get(i);
+
+            // Get customer names
+            String sourceCustomer = t.getSourceAccount().getCustomer().getFullName();
+            String destCustomer = t.getDestinationAccount().getCustomer().getFullName();
+
+            String transactionInfo = "";
+            if (t.getTransactionType() == TransactionType.TRANSFER &&
+                    !sourceCustomer.equals(destCustomer)) {
+                transactionInfo = sourceCustomer + " → " + destCustomer;
+            } else {
+                transactionInfo = sourceCustomer;
+            }
+
+            Console.info((i + 1) + ") " + t.getTransactionType() + " | $" +
+                    String.format("%.2f", t.getAmount()) + " | " + transactionInfo +
+                    " | " + t.getDescription() + " | " + t.getDate() + " | ID: " + t.getId());
+        }
+        Console.line();
+    }
+
 }

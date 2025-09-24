@@ -6,6 +6,8 @@ import java.util.stream.Collectors;
 
 import models.Account;
 import models.Transaction;
+import exceptions.AccountNotFoundException;
+import exceptions.InvalidTransactionException;
 
 public class TransactionRepository implements RepositoryBase<Transaction> {
     private static TransactionRepository instance;
@@ -63,8 +65,23 @@ public class TransactionRepository implements RepositoryBase<Transaction> {
 
     @Override
     public void save(Transaction transaction) {
+        if (transaction == null) {
+            throw new InvalidTransactionException("Cannot save null transaction");
+        }
+        if (transaction.getSourceAccount() == null) {
+            throw new AccountNotFoundException("Source account cannot be null");
+        }
+        if (transaction.getDestinationAccount() == null) {
+            throw new AccountNotFoundException("Destination account cannot be null");
+        }
+        if (transaction.getAmount() <= 0) {
+            throw new exceptions.NegativeAmountException(transaction.getAmount());
+        }
+
         transaction.getSourceAccount().addTransaction(transaction);
-        transaction.getDestinationAccount().addTransaction(transaction);
+        if (!transaction.getSourceAccount().equals(transaction.getDestinationAccount())) {
+            transaction.getDestinationAccount().addTransaction(transaction);
+        }
         transactions.add(transaction);
     }
 
@@ -93,6 +110,12 @@ public class TransactionRepository implements RepositoryBase<Transaction> {
 
     @Override
     public void delete(Transaction t) {
+        if (t == null) {
+            throw new InvalidTransactionException("Cannot delete null transaction");
+        }
+        if (!transactions.contains(t)) {
+            throw new InvalidTransactionException("Transaction not found in repository");
+        }
         transactions.remove(t);
     }
 
