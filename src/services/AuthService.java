@@ -2,8 +2,7 @@ package services;
 
 import java.util.Optional;
 
-import exceptions.CustomerNotFoundException;
-import exceptions.InvalidTransactionException;
+import exceptions.AuthenticationFailedException;
 import models.Customer;
 import models.UserType;
 import repositories.CustomerRepository;
@@ -36,26 +35,27 @@ public final class AuthService implements AuthInterface {
         try {
             // Validate current session state
             if (this.authenticated) {
-                throw new IllegalArgumentException("Active session detected. Please logout first.");
+                throw new AuthenticationFailedException("registration",
+                        "Active session detected. Please logout first.");
             }
 
             // Validate input parameters
             if (firstName == null || firstName.trim().isEmpty()) {
-                throw new IllegalArgumentException("First name cannot be null or empty");
+                throw new AuthenticationFailedException("registration", "First name cannot be null or empty");
             }
             if (lastName == null || lastName.trim().isEmpty()) {
-                throw new IllegalArgumentException("Last name cannot be null or empty");
+                throw new AuthenticationFailedException("registration", "Last name cannot be null or empty");
             }
             if (email == null || email.trim().isEmpty()) {
-                throw new IllegalArgumentException("Email cannot be null or empty");
+                throw new AuthenticationFailedException("registration", "Email cannot be null or empty");
             }
             if (password == null || password.trim().isEmpty()) {
-                throw new IllegalArgumentException("Password cannot be null or empty");
+                throw new AuthenticationFailedException("registration", "Password cannot be null or empty");
             }
 
             // Check for existing user
             if (customerRepository.find("email", email.toLowerCase().trim()).isPresent()) {
-                throw new IllegalArgumentException("Email address already registered");
+                throw new AuthenticationFailedException("registration", "Email address already registered");
             }
 
             // Create new customer
@@ -70,8 +70,8 @@ public final class AuthService implements AuthInterface {
             Console.success("Registration completed successfully! Welcome, " + firstName + "!");
             return true;
 
-        } catch (IllegalArgumentException e) {
-            Console.error("Registration failed: " + e.getMessage());
+        } catch (AuthenticationFailedException e) {
+            Console.error("Registration failed: " + e.getReason());
             return false;
         } catch (Exception e) {
             Console.error("Registration failed due to system error: " + e.getMessage());
@@ -84,35 +84,35 @@ public final class AuthService implements AuthInterface {
         try {
             // Validate current session state
             if (this.authenticated) {
-                throw new InvalidTransactionException("login", "Already authenticated. Please logout first.");
+                throw new AuthenticationFailedException("login", "Already authenticated. Please logout first.");
             }
 
             // Validate input
             if (email == null || email.trim().isEmpty()) {
-                throw new InvalidTransactionException("login", "Email cannot be null or empty");
+                throw new AuthenticationFailedException("login", "Email cannot be null or empty");
             }
             if (password == null || password.trim().isEmpty()) {
-                throw new InvalidTransactionException("login", "Password cannot be null or empty");
+                throw new AuthenticationFailedException("login", "Password cannot be null or empty");
             }
 
             // Find user
             Optional<Customer> customerOpt = customerRepository.find("email", email.toLowerCase().trim());
             if (customerOpt.isEmpty()) {
-                throw new CustomerNotFoundException("email", email);
+                throw new AuthenticationFailedException("login", "Invalid credentials - user not found");
             }
 
             Customer customer = customerOpt.get();
 
             // Verify password
             if (!customer.getPassword().equals(password)) {
-                throw new InvalidTransactionException("login", "Invalid credentials");
+                throw new AuthenticationFailedException("login", "Invalid credentials - wrong password");
             }
 
             // Establish session
             establishSession(customer);
             return true;
 
-        } catch (CustomerNotFoundException | InvalidTransactionException e) {
+        } catch (AuthenticationFailedException e) {
             Console.error("Login failed: Invalid credentials.");
             return false;
         } catch (Exception e) {
@@ -147,7 +147,7 @@ public final class AuthService implements AuthInterface {
     public Customer requireAuthentication() {
         if (!isAuthenticated()) {
             Console.error("Authentication required. Please login to continue.");
-            throw new IllegalStateException("No authenticated user found. Please login first.");
+            throw new AuthenticationFailedException("access", "No authenticated user found. Please login first.");
         }
         return this.currentUser;
     }
@@ -156,7 +156,7 @@ public final class AuthService implements AuthInterface {
     public void requireNoAuthentication() {
         if (isAuthenticated()) {
             Console.error("Operation not allowed: User already authenticated. Please logout first.");
-            throw new IllegalStateException("User is already authenticated. Please logout first.");
+            throw new AuthenticationFailedException("duplicate", "User is already authenticated. Please logout first.");
         }
     }
 

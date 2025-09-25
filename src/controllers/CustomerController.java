@@ -170,7 +170,7 @@ public final class CustomerController {
                 Transaction lastTransaction = account.getTransactions().get(account.getTransactions().size() - 1);
                 Console.info("   Last Transaction: " + lastTransaction.getTransactionType() +
                         " - $" + String.format("%.2f", lastTransaction.getAmount()) +
-                        " on " + lastTransaction.getDate());
+                        " on " + lastTransaction.getFormattedDateTime());
             }
             Console.line();
         }
@@ -244,9 +244,9 @@ public final class CustomerController {
             Console.info("  Total Money Out: -$" + String.format("%.2f", totalWithdrawals));
             Console.info("  Net Change: $" + String.format("%.2f", (totalDeposits - totalWithdrawals)));
 
-            // Show first and last transaction dates
-            Console.info("  First Transaction: " + transactions.get(0).getDate());
-            Console.info("  Last Transaction: " + transactions.get(transactions.size() - 1).getDate());
+            // Show first and last transaction dates with time
+            Console.info("  First Transaction: " + transactions.get(0).getFormattedDateTime());
+            Console.info("  Last Transaction: " + transactions.get(transactions.size() - 1).getFormattedDateTime());
         }
         Console.line();
     }

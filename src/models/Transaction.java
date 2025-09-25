@@ -1,6 +1,7 @@
 package models;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 import exceptions.AccountNotFoundException;
 import exceptions.InvalidTransactionException;
@@ -10,7 +11,7 @@ public class Transaction {
     private UUID id;
     private TransactionType transactionType;
     private double amount;
-    private LocalDate date;
+    private LocalDateTime dateTime;
     private String description;
     private Account sourceAccount;
     private Account destinationAccount;
@@ -45,7 +46,7 @@ public class Transaction {
         this.id = UUID.randomUUID();
         this.transactionType = transactionType;
         this.amount = amount;
-        this.date = LocalDate.now();
+        this.dateTime = LocalDateTime.now();
         this.description = description.trim();
         this.sourceAccount = sourceAccount;
         this.destinationAccount = destinationAccount;
@@ -63,8 +64,28 @@ public class Transaction {
         return amount;
     }
 
-    public LocalDate getDate() {
-        return date;
+    public LocalDateTime getDateTime() {
+        return dateTime;
+    }
+
+    // Keep getDate() for backward compatibility, returns LocalDate part
+    public java.time.LocalDate getDate() {
+        return dateTime.toLocalDate();
+    }
+
+    // Get formatted date and time string
+    public String getFormattedDateTime() {
+        return dateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+    }
+
+    // Get formatted date only
+    public String getFormattedDate() {
+        return dateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+    }
+
+    // Get formatted time only
+    public String getFormattedTime() {
+        return dateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss"));
     }
 
     public String getDescription() {

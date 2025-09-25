@@ -78,8 +78,8 @@ public class StatisticsService {
             Console.info("  Total Money Out: -$" + String.format("%.2f", totalWithdrawals));
             Console.info("  Net Change: $" + String.format("%.2f", (totalDeposits - totalWithdrawals)));
 
-            Console.info("  First Transaction: " + transactions.get(0).getDate());
-            Console.info("  Last Transaction: " + transactions.get(transactions.size() - 1).getDate());
+            Console.info("  First Transaction: " + transactions.get(0).getFormattedDateTime());
+            Console.info("  Last Transaction: " + transactions.get(transactions.size() - 1).getFormattedDateTime());
         }
         Console.line();
     }
@@ -260,9 +260,9 @@ public class StatisticsService {
                     .orElse(0.0);
             Console.info("  Largest Transaction: $" + String.format("%.2f", maxAmount));
 
-            Console.info("  First Transaction Date: " + allTransactions.get(0).getDate());
+            Console.info("  First Transaction Date: " + allTransactions.get(0).getFormattedDateTime());
             Console.info("  Most Recent Transaction: " +
-                    allTransactions.get(allTransactions.size() - 1).getDate());
+                    allTransactions.get(allTransactions.size() - 1).getFormattedDateTime());
         }
     }
 }

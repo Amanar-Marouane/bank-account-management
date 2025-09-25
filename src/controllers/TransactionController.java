@@ -13,8 +13,10 @@ import exceptions.CustomerNotFoundException;
 import exceptions.AccountNotFoundException;
 import exceptions.InvalidTransactionException;
 import exceptions.InsufficientFundsException;
+import exceptions.SuspiciousActivityException;
 import services.FilterService;
 import services.StatisticsService;
+import services.SuspiciousTransactionDetector;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,6 +28,7 @@ public final class TransactionController {
     private CustomerRepository customerRepository;
     private FilterService filterService;
     private StatisticsService statisticsService;
+    private SuspiciousTransactionDetector suspiciousDetector;
 
     public TransactionController() {
         this.transactionRepository = TransactionRepository.getInstance();
@@ -33,6 +36,7 @@ public final class TransactionController {
         this.customerRepository = CustomerRepository.getInstance();
         this.filterService = FilterService.getInstance();
         this.statisticsService = StatisticsService.getInstance();
+        this.suspiciousDetector = new SuspiciousTransactionDetector();
     }
 
     public void viewTransactionHistory(Account account) {
@@ -55,7 +59,7 @@ public final class TransactionController {
             }
             Console.info((i + 1) + ") " + t.getTransactionType() + " | " + sign + "$" +
                     String.format("%.2f", t.getAmount()) + " | " + t.getDescription() +
-                    " | " + t.getDate() + " | ID: " + t.getId());
+                    " | " + t.getFormattedDateTime() + " | ID: " + t.getId());
         }
         Console.line();
     }
@@ -80,10 +84,15 @@ public final class TransactionController {
                     account,
                     account);
 
+            // Check for suspicious activity
+            validateSuspiciousActivity(account.getTransactions(), deposit);
+
             transactionRepository.save(deposit);
             Console.success("Deposit added successfully!");
             Console.info("New balance: $" + String.format("%.2f", account.getBalance()));
 
+        } catch (SuspiciousActivityException e) {
+            Console.error("Deposit blocked: " + e.getMessage());
         } catch (NegativeAmountException e) {
             Console.error("Deposit failed: " + e.getMessage());
         } catch (AccountNotFoundException e) {
@@ -118,10 +127,15 @@ public final class TransactionController {
                     account,
                     account);
 
+            // Check for suspicious activity
+            validateSuspiciousActivity(account.getTransactions(), withdrawal);
+
             transactionRepository.save(withdrawal);
             Console.success("Withdrawal added successfully!");
             Console.info("New balance: $" + String.format("%.2f", account.getBalance()));
 
+        } catch (SuspiciousActivityException e) {
+            Console.error("Withdrawal blocked: " + e.getMessage());
         } catch (NegativeAmountException e) {
             Console.error("Withdrawal failed: " + e.getMessage());
         } catch (InsufficientFundsException e) {
@@ -166,11 +180,16 @@ public final class TransactionController {
                     sourceAccount,
                     destinationAccount);
 
+            // Check for suspicious activity
+            validateSuspiciousActivity(sourceAccount.getTransactions(), transfer);
+
             transactionRepository.save(transfer);
             Console.success("Transfer completed successfully!");
             Console.info("Source account new balance: $" + String.format("%.2f", sourceAccount.getBalance()));
             Console.info("Destination account new balance: $" + String.format("%.2f", destinationAccount.getBalance()));
 
+        } catch (SuspiciousActivityException e) {
+            Console.error("Transfer blocked: " + e.getMessage());
         } catch (NegativeAmountException e) {
             Console.error("Transfer failed: " + e.getMessage());
         } catch (InsufficientFundsException e) {
@@ -391,7 +410,7 @@ public final class TransactionController {
             }
             Console.info((i + 1) + ") " + t.getTransactionType() + " | " + sign + "$" +
                     String.format("%.2f", t.getAmount()) + " | " + t.getDescription() +
-                    " | " + t.getDate());
+                    " | " + t.getFormattedDateTime());
         }
         Console.line();
     }
@@ -481,7 +500,7 @@ public final class TransactionController {
 
             Console.info((i + 1) + ") " + t.getTransactionType() + " | " + sign + "$" +
                     String.format("%.2f", effectiveAmount) + " | " + t.getDescription() +
-                    " | " + t.getDate() + " | ID: " + t.getId());
+                    " | " + t.getFormattedDateTime() + " | ID: " + t.getId());
         }
 
         Console.line();
@@ -510,6 +529,11 @@ public final class TransactionController {
 
     public void displaySystemStatistics(ArrayList<Transaction> transactions) {
         statisticsService.displaySystemStatistics(transactions);
+    }
+
+    private void validateSuspiciousActivity(List<Transaction> transactions, Transaction newTransaction)
+            throws SuspiciousActivityException {
+        suspiciousDetector.validateTransaction(transactions, newTransaction);
     }
 
 }

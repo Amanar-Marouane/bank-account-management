@@ -5,9 +5,6 @@ import models.Transaction;
 import models.TransactionType;
 import utils.Console;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
 
@@ -130,23 +127,36 @@ public class FilterService {
         try {
             String startDate = Console.ask("Enter start date (yyyy-MM-dd) or press Enter for no start limit: ");
             String endDate = Console.ask("Enter end date (yyyy-MM-dd) or press Enter for no end limit: ");
+            String startTime = Console.ask("Enter start time (HH:mm) or press Enter for 00:00: ");
+            String endTime = Console.ask("Enter end time (HH:mm) or press Enter for 23:59: ");
 
-            LocalDate start = startDate.trim().isEmpty() ? null
-                    : LocalDate.parse(startDate, DateTimeFormatter.ISO_LOCAL_DATE);
-            LocalDate end = endDate.trim().isEmpty() ? null
-                    : LocalDate.parse(endDate, DateTimeFormatter.ISO_LOCAL_DATE);
+            java.time.LocalDateTime start = null;
+            java.time.LocalDateTime end = null;
+
+            if (!startDate.trim().isEmpty()) {
+                String timeStr = startTime.trim().isEmpty() ? "00:00" : startTime.trim();
+                start = java.time.LocalDateTime.parse(startDate + "T" + timeStr + ":00");
+            }
+
+            if (!endDate.trim().isEmpty()) {
+                String timeStr = endTime.trim().isEmpty() ? "23:59" : endTime.trim();
+                end = java.time.LocalDateTime.parse(endDate + "T" + timeStr + ":59");
+            }
+
+            final java.time.LocalDateTime finalStart = start;
+            final java.time.LocalDateTime finalEnd = end;
 
             return transactions.stream()
                     .filter(t -> {
-                        LocalDate transactionDate = t.getDate();
-                        boolean afterStart = start == null || !transactionDate.isBefore(start);
-                        boolean beforeEnd = end == null || !transactionDate.isAfter(end);
+                        java.time.LocalDateTime transactionDateTime = t.getDateTime();
+                        boolean afterStart = finalStart == null || !transactionDateTime.isBefore(finalStart);
+                        boolean beforeEnd = finalEnd == null || !transactionDateTime.isAfter(finalEnd);
                         return afterStart && beforeEnd;
                     })
                     .collect(Collectors.toCollection(ArrayList::new));
 
-        } catch (DateTimeParseException e) {
-            Console.error("Invalid date format. Please use yyyy-MM-dd format.");
+        } catch (java.time.format.DateTimeParseException e) {
+            Console.error("Invalid date/time format. Please use yyyy-MM-dd for date and HH:mm for time.");
             return new ArrayList<>();
         }
     }
@@ -202,25 +212,25 @@ public class FilterService {
 
                 if (isSource && isDest) {
                     // Internal transfer between my own accounts
-                    accountInfo = "[" + t.getSourceAccount().getAccountType() + " → " +
+                    accountInfo = "[" + t.getSourceAccount().getAccountType() + " -> " +
                             t.getDestinationAccount().getAccountType() + "]";
                     sign = "↔";
                 } else if (isSource) {
                     // Outgoing transfer to someone else
                     sign = "-";
                     totalOut += effectiveAmount;
-                    accountInfo = "[" + t.getSourceAccount().getAccountType() + " → External]";
+                    accountInfo = "[" + t.getSourceAccount().getAccountType() + " -> External]";
                 } else {
                     // Incoming transfer from someone else
                     sign = "+";
                     totalIn += effectiveAmount;
-                    accountInfo = "[External → " + t.getDestinationAccount().getAccountType() + "]";
+                    accountInfo = "[External -> " + t.getDestinationAccount().getAccountType() + "]";
                 }
             }
 
             Console.info((i + 1) + ") " + t.getTransactionType() + " " + accountInfo + " | " +
                     sign + "$" + String.format("%.2f", effectiveAmount) + " | " +
-                    t.getDescription() + " | " + t.getDate());
+                    t.getDescription() + " | " + t.getFormattedDateTime());
         }
 
         Console.line();

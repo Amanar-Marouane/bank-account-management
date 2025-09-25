@@ -678,7 +678,7 @@ public final class AdminController {
             String transactionInfo = "";
             if (t.getTransactionType() == TransactionType.TRANSFER &&
                     !sourceCustomer.equals(destCustomer)) {
-                transactionInfo = sourceCustomer + " → " + destCustomer;
+                transactionInfo = sourceCustomer + " -> " + destCustomer;
             } else {
                 transactionInfo = sourceCustomer;
             }
