@@ -1,6 +1,7 @@
 package controllers;
 
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 
 import models.Customer;
 import repositories.CustomerRepository;
@@ -16,22 +17,22 @@ public class AuthController {
         this.customerRepository = CustomerRepository.getInstance();
     }
 
-    private HashMap<String, String> registerAttempt() {
-        HashMap<String, String> registry = new HashMap<>();
+    private List<String> registerAttempt() {
+        List<String> registry = new ArrayList<>();
 
-        registry.put("email", this.emailAttempt());
-        registry.put("firstName", this.nameAttempt("first name"));
-        registry.put("lastName", this.nameAttempt("last name"));
-        registry.put("password", this.passwordAttempt());
+        registry.add(this.emailAttempt());
+        registry.add(this.nameAttempt("first name"));
+        registry.add(this.nameAttempt("last name"));
+        registry.add(this.passwordAttempt());
 
         return registry;
     }
 
-    private HashMap<String, String> loginAttempt() {
-        HashMap<String, String> registry = new HashMap<>();
+    private List<String> loginAttempt() {
+        List<String> registry = new ArrayList<>();
 
-        registry.put("email", this.emailAttempt());
-        registry.put("password", this.passwordAttempt());
+        registry.add(this.emailAttempt());
+        registry.add(this.passwordAttempt());
 
         return registry;
     }
@@ -70,11 +71,11 @@ public class AuthController {
     public void register() {
         Console.info("Processing registration...");
 
-        HashMap<String, String> register = this.registerAttempt();
-        String firstName = register.get("firstName");
-        String lastName = register.get("lastName");
-        String email = register.get("email");
-        String password = register.get("password");
+        List<String> register = this.registerAttempt();
+        String email = register.get(0);
+        String firstName = register.get(1);
+        String lastName = register.get(2);
+        String password = register.get(3);
 
         auth.register(firstName, lastName, email, password);
     }
@@ -82,9 +83,9 @@ public class AuthController {
     public void login() {
         Console.info("Processing login...");
 
-        HashMap<String, String> login = this.loginAttempt();
-        String email = login.get("email");
-        String password = login.get("password");
+        List<String> login = this.loginAttempt();
+        String email = login.get(0);
+        String password = login.get(1);
 
         if (!isValidEmail(email)) {
             Console.error("Login failed: Invalid email format.");
