@@ -58,7 +58,7 @@ public final class AuthService implements AuthInterface {
                 throw new AuthenticationFailedException("registration", "Email address already registered");
             }
 
-            // Create new customer
+            // Create a new customer
             Customer customer = new Customer(
                     sanitizeName(firstName),
                     sanitizeName(lastName),
@@ -97,11 +97,12 @@ public final class AuthService implements AuthInterface {
 
             // Find user
             Optional<Customer> customerOpt = customerRepository.find("email", email.toLowerCase().trim());
-            if (customerOpt.isEmpty()) {
+            if (!customerOpt.isPresent()) {
                 throw new AuthenticationFailedException("login", "Invalid credentials - user not found");
             }
 
             Customer customer = customerOpt.get();
+
 
             // Verify password
             if (!customer.getPassword().equals(password)) {

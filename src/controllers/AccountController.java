@@ -28,7 +28,7 @@ public final class AccountController {
 
         Optional<Customer> currentCustomer = auth.getCurrentUser();
 
-        if (currentCustomer.isEmpty()) {
+        if (!currentCustomer.isPresent()) {
             Console.error("User not found. Please log in again.");
             return;
         }
