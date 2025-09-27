@@ -31,27 +31,10 @@ public class CustomerRepository implements RepositoryBase<Customer> {
     }
 
     @Override
-    public Optional<Customer> find(String field, String value) {
-        switch (field.toLowerCase()) {
-            case "id":
-                return customers.stream()
-                        .filter(c -> c.getId().toString().equals(value))
-                        .findFirst();
-            case "firstname":
-                return customers.stream()
-                        .filter(c -> c.getFirstName().equalsIgnoreCase(value))
-                        .findFirst();
-            case "lastname":
-                return customers.stream()
-                        .filter(c -> c.getLastName().equalsIgnoreCase(value))
-                        .findFirst();
-            case "email":
-                return customers.stream()
-                        .filter(c -> c.getEmail().equalsIgnoreCase(value))
-                        .findFirst();
-            default:
-                return Optional.empty();
-        }
+    public Optional<Customer> findById(String value) {
+        return customers.stream()
+                .filter(c -> c.getId().toString().equals(value))
+                .findFirst();
     }
 
     public Optional<Customer> findCustomerByAccount(Account a) {
@@ -112,6 +95,12 @@ public class CustomerRepository implements RepositoryBase<Customer> {
         }
 
         customers.remove(c);
+    }
+
+    public Optional<Customer> findByEmail(String value) {
+        return customers.stream()
+                .filter(c -> c.getEmail().toString().equals(value))
+                .findFirst();
     }
 
 }

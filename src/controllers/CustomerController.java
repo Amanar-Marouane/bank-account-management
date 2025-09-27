@@ -47,7 +47,7 @@ public final class CustomerController {
         UserType userType = typeChoice.equals("2") ? UserType.ADMIN : UserType.USER;
 
         // Check if email already exists
-        if (customerRepository.find("email", email).isPresent()) {
+        if (customerRepository.findByEmail(email).isPresent()) {
             Console.error("Email already exists!");
             return;
         }

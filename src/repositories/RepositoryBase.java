@@ -19,7 +19,7 @@ public interface RepositoryBase<T> {
      * @param value the value to match
      * @return an Optional containing the entity if found, empty otherwise
      */
-    Optional<T> find(String key, String value);
+    Optional<T> findById(String value);
 
     /**
      * Save or update an entity in the repository.

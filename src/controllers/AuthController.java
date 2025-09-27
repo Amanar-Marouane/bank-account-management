@@ -112,7 +112,7 @@ public class AuthController {
                 }
 
                 // Check if email already exists
-                if (customerRepository.find("email", email).isPresent()) {
+                if (customerRepository.findByEmail(email).isPresent()) {
                     Console.error("This email is already registered. Please use a different one.");
                     return;
                 }

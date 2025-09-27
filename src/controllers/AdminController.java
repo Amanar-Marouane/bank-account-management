@@ -101,7 +101,7 @@ public final class AdminController {
 
     private void searchCustomer() {
         String email = Console.ask("Enter customer email to search: ");
-        Optional<Customer> customer = customerRepository.find("email", email);
+        Optional<Customer> customer = customerRepository.findByEmail(email);
 
         if (customer.isPresent()) {
             manageSpecificCustomer(customer.get());
@@ -185,7 +185,7 @@ public final class AdminController {
                 break;
             case "3":
                 String newEmail = Console.ask("Enter new email: ");
-                if (customerRepository.find("email", newEmail).isPresent()) {
+                if (customerRepository.findByEmail(newEmail).isPresent()) {
                     Console.error("Email already exists!");
                 } else {
                     customer.setEmail(newEmail);

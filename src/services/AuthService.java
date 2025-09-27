@@ -54,7 +54,7 @@ public final class AuthService implements AuthInterface {
             }
 
             // Check for existing user
-            if (customerRepository.find("email", email.toLowerCase().trim()).isPresent()) {
+            if (customerRepository.findByEmail(email.toLowerCase().trim()).isPresent()) {
                 throw new AuthenticationFailedException("registration", "Email address already registered");
             }
 
@@ -96,7 +96,7 @@ public final class AuthService implements AuthInterface {
             }
 
             // Find user
-            Optional<Customer> customerOpt = customerRepository.find("email", email.toLowerCase().trim());
+            Optional<Customer> customerOpt = customerRepository.findByEmail(email.toLowerCase().trim());
             if (!customerOpt.isPresent()) {
                 throw new AuthenticationFailedException("login", "Invalid credentials - user not found");
             }

@@ -29,23 +29,10 @@ public class AccountRepository implements RepositoryBase<Account> {
     }
 
     @Override
-    public Optional<Account> find(String field, String value) {
-        switch (field.toLowerCase()) {
-            case "id":
-                return accounts.stream()
-                        .filter(a -> a.getId().toString().equals(value))
-                        .findFirst();
-            case "accounttype":
-                return accounts.stream()
-                        .filter(a -> a.getAccountType().toString().equalsIgnoreCase(value))
-                        .findFirst();
-            case "balance":
-                return accounts.stream()
-                        .filter(a -> Double.toString(a.getBalance()).equalsIgnoreCase(value))
-                        .findFirst();
-            default:
-                return Optional.empty();
-        }
+    public Optional<Account> findById(String value) {
+        return accounts.stream()
+                .filter(a -> a.getId().toString().equals(value))
+                .findFirst();
     }
 
     public Optional<Account> findAccountsByCustomer(Object customer) {

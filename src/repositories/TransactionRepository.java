@@ -30,31 +30,10 @@ public class TransactionRepository implements RepositoryBase<Transaction> {
     }
 
     @Override
-    public Optional<Transaction> find(String field, String value) {
-        switch (field.toLowerCase()) {
-            case "id":
-                return transactions.stream()
-                        .filter(t -> t.getId().toString().equals(value))
-                        .findFirst();
-            case "transactiontype":
-                return transactions.stream()
-                        .filter(t -> t.getTransactionType().toString().equalsIgnoreCase(value))
-                        .findFirst();
-            case "description":
-                return transactions.stream()
-                        .filter(t -> t.getDescription().equalsIgnoreCase(value))
-                        .findFirst();
-            case "data":
-                return transactions.stream()
-                        .filter(t -> t.getDate().toString().equalsIgnoreCase(value))
-                        .findFirst();
-            case "amount":
-                return transactions.stream()
-                        .filter(t -> Double.toString(t.getAmount()).equalsIgnoreCase(value))
-                        .findFirst();
-            default:
-                return Optional.empty();
-        }
+    public Optional<Transaction> findById(String value) {
+        return transactions.stream()
+                .filter(t -> t.getId().toString().equals(value))
+                .findFirst();
     }
 
     public ArrayList<Transaction> findTransactionsByAccount(Account a) {
